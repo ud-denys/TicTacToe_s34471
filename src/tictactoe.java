@@ -54,6 +54,23 @@ public class tictactoe {
         updateStatusLabel();
     }
 
+    private void updateBoard() {
+        // TODO: Make JNI call to get the current board state and update buttons
+        String[][] boardState = getBoardStateJNI();
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                buttons[i][j].setText(boardState[i][j]);
+                buttons[i][j].setEnabled(boardState[i][j].isEmpty());
+            }
+        }
+        updateStatusLabel();
+    }
+
+    private native void makeMoveJNI(int row, int col); // C++
+    private native String[][] getBoardStateJNI(); // C++
+    private native void resetGameJNI(); // C++
+
+
     private String getCurrentPlayer() {
         return isPlayerX ? "X" : "O";
     }
@@ -66,6 +83,12 @@ public class tictactoe {
         }
     }
 
+    private void resetGame() {
+        isPlayerX = true;
+
+        resetGameJNI();//C++
+        updateBoard();
+    }
 
 
     public static void main(String[] args) {
