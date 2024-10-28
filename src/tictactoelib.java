@@ -1,4 +1,8 @@
 public class tictactoelib {
+    static{
+        System.loadLibrary("libtictactoelib");
+    }
+
 
     public static native void makeMoveJNI(int row, int col);
     public static native String[][] getBoardStateJNI();
