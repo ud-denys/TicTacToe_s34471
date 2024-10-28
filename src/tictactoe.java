@@ -87,7 +87,7 @@ public class tictactoe {
     }
 
     public static void main(String[] args) {
-        System.load("libtictactoelib");
+        System.load("C:\\Users\\s34471\\IdeaProjects\\tictactoelib_s34471\\cmake-build-debug\\libtictactoelib.dll");
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
