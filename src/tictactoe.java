@@ -3,15 +3,13 @@ import java.awt.*;
 
 public class tictactoe {
 
-    static {
-        System.loadLibrary("libtictactoelib");
-    }
-
     private JFrame frame;
     private JPanel boardPanel;
     private JButton[][] buttons;
     private JLabel statusLabel;
-    private final int SIZE = 3;
+    private final int SIZE = 5;
+
+
 
     public tictactoe() {
         frame = new JFrame("Tic Tac Toe");
@@ -89,7 +87,7 @@ public class tictactoe {
     }
 
     public static void main(String[] args) {
-
+        System.load("libtictactoelib");
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
