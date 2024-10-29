@@ -8,24 +8,44 @@ public class tictactoe {
     private JButton[][] buttons;
     private JLabel statusLabel;
     private final int SIZE = 5;
-    private boolean isPlayerX = true;
+
+
 
     public tictactoe() {
         frame = new JFrame("Tic Tac Toe");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(600, 600);
-        frame.setVisible(true);
+        frame.setSize(600, 700);
+        frame.setLayout(new BorderLayout());
 
         boardPanel = new JPanel();
         boardPanel.setLayout(new GridLayout(SIZE, SIZE));
         buttons = new JButton[SIZE][SIZE];
 
+        initializeBoard();
+
+        statusLabel = new JLabel("Player X's turn");
+        statusLabel.setFont(new Font("Arial", Font.PLAIN, 24));
+        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        frame.add(statusLabel, BorderLayout.NORTH);
+        frame.add(boardPanel, BorderLayout.CENTER);
+
+        JButton resetButton = new JButton("Reset Game");
+        resetButton.setFont(new Font("Arial", Font.PLAIN, 24));
+        resetButton.addActionListener(e -> resetGame());
+        frame.add(resetButton, BorderLayout.SOUTH);
+
+        frame.setVisible(true);
+    }
+
+    private void initializeBoard() {
+        String[][] initialBoard = tictactoelib.getBoardStateJNI();
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
-                buttons[i][j] = new JButton();
-                buttons[i][j].setFont(new Font("Arial", Font.PLAIN, 60));
+                buttons[i][j] = new JButton(initialBoard[i][j]);
+                buttons[i][j].setFont(new Font("Arial", Font.PLAIN, 100));
                 buttons[i][j].setFocusPainted(false);
                 buttons[i][j].setBackground(Color.WHITE);
+                buttons[i][j].setEnabled(initialBoard[i][j].isEmpty());
 
                 final int row = i;
                 final int col = j;
@@ -35,28 +55,16 @@ public class tictactoe {
                 boardPanel.add(buttons[i][j]);
             }
         }
-
-        statusLabel = new JLabel("Player X's turn");
-        statusLabel.setFont(new Font("Arial", Font.PLAIN, 24));
-        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        frame.add(statusLabel, BorderLayout.NORTH);
-        frame.add(boardPanel, BorderLayout.CENTER);
-
-        frame.add(boardPanel, BorderLayout.CENTER);
-        frame.setVisible(true);
     }
 
-
     private void handleButtonClick(int row, int col) {
-        buttons[row][col].setText(getCurrentPlayer());
-        buttons[row][col].setEnabled(false);
-        isPlayerX = !isPlayerX;
-        updateStatusLabel();
+        tictactoelib.makeMoveJNI(row, col);
+        updateBoard();
     }
 
     private void updateBoard() {
-        // TODO: Make JNI call to get the current board state and update buttons
-        String[][] boardState = getBoardStateJNI();
+
+        String[][] boardState = tictactoelib.getBoardStateJNI();
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
                 buttons[i][j].setText(boardState[i][j]);
@@ -66,32 +74,20 @@ public class tictactoe {
         updateStatusLabel();
     }
 
-    private native void makeMoveJNI(int row, int col); // C++
-    private native String[][] getBoardStateJNI(); // C++
-    private native void resetGameJNI(); // C++
-
-
-    private String getCurrentPlayer() {
-        return isPlayerX ? "X" : "O";
-    }
-
     private void updateStatusLabel() {
-        if (isPlayerX) {
-            statusLabel.setText("Player X's turn");
-        } else {
-            statusLabel.setText("Player O's turn");
-        }
+
+        String currentPlayer = tictactoelib.getCurrentPlayerJNI();
+        statusLabel.setText(currentPlayer + "'s turn");
     }
 
     private void resetGame() {
-        isPlayerX = true;
 
-        resetGameJNI();//C++
+        tictactoelib.resetGameJNI();
         updateBoard();
     }
 
-
     public static void main(String[] args) {
+        System.loadLibrary("libtictactoelib");
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
