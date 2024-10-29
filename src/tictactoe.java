@@ -3,13 +3,15 @@ import java.awt.*;
 
 public class tictactoe {
 
+    static {
+        System.loadLibrary("tictactoelib");
+    }
+
     private JFrame frame;
     private JPanel boardPanel;
     private JButton[][] buttons;
     private JLabel statusLabel;
     private final int SIZE = 5;
-
-
 
     public tictactoe() {
         frame = new JFrame("Tic Tac Toe");
@@ -38,61 +40,64 @@ public class tictactoe {
     }
 
     private void initializeBoard() {
-        String[][] initialBoard = tictactoelib.getBoardStateJNI();
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                buttons[i][j] = new JButton(initialBoard[i][j]);
-                buttons[i][j].setFont(new Font("Arial", Font.PLAIN, 100));
-                buttons[i][j].setFocusPainted(false);
-                buttons[i][j].setBackground(Color.WHITE);
-                buttons[i][j].setEnabled(initialBoard[i][j].isEmpty());
-
-                final int row = i;
-                final int col = j;
-
-                buttons[row][col].addActionListener(e -> handleButtonClick(row, col));
-
-                boardPanel.add(buttons[i][j]);
-            }
-        }
+        updateBoard();
     }
 
     private void handleButtonClick(int row, int col) {
         tictactoelib.makeMoveJNI(row, col);
         updateBoard();
+        if (tictactoelib.checkWinJNI()) {
+            statusLabel.setText("Player " + (tictactoelib.getCurrentPlayerJNI().equals("X") ? "O" : "X") + " wins!");
+            disableBoard();
+        } else if (tictactoelib.isDrawJNI()) {
+            statusLabel.setText("It's a draw!");
+            disableBoard();
+        } else {
+            updateStatusLabel();
+        }
     }
 
-    private void updateBoard() {
 
+    private void updateBoard() {
         String[][] boardState = tictactoelib.getBoardStateJNI();
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
+                if (buttons[i][j] == null) {
+                    buttons[i][j] = new JButton();
+                    buttons[i][j].setFont(new Font("Arial", Font.PLAIN, 100));
+                    buttons[i][j].setFocusPainted(false);
+                    buttons[i][j].setBackground(Color.WHITE);
+                    final int row = i;
+                    final int col = j;
+                    buttons[row][col].addActionListener(e -> handleButtonClick(row, col));
+                    boardPanel.add(buttons[i][j]);
+                }
                 buttons[i][j].setText(boardState[i][j]);
                 buttons[i][j].setEnabled(boardState[i][j].isEmpty());
             }
         }
-        updateStatusLabel();
     }
 
     private void updateStatusLabel() {
-
         String currentPlayer = tictactoelib.getCurrentPlayerJNI();
         statusLabel.setText(currentPlayer + "'s turn");
     }
 
     private void resetGame() {
-
         tictactoelib.resetGameJNI();
         updateBoard();
+        statusLabel.setText("Player X's turn");
+    }
+
+    private void disableBoard() {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                buttons[i][j].setEnabled(false);
+            }
+        }
     }
 
     public static void main(String[] args) {
-        System.loadLibrary("libtictactoelib");
-        javax.swing.SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new tictactoe();
-            }
-        });
+        javax.swing.SwingUtilities.invokeLater(tictactoe::new);
     }
 }

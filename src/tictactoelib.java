@@ -8,4 +8,6 @@ public class tictactoelib {
     public static native String[][] getBoardStateJNI();
     public static native void resetGameJNI();
     public static native String getCurrentPlayerJNI();
+    public static native boolean checkWinJNI();
+    public static native boolean isDrawJNI();
 }
