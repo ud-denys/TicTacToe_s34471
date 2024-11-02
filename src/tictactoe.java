@@ -1,103 +1,131 @@
 import javax.swing.*;
 import java.awt.*;
+import javax.swing.border.LineBorder;
 
-public class tictactoe {
-
-    static {
-        System.loadLibrary("tictactoelib");
-    }
-
-    private JFrame frame;
-    private JPanel boardPanel;
-    private JButton[][] buttons;
-    private JLabel statusLabel;
-    private final int SIZE = 5;
+public class tictactoe extends JFrame {
+    private JButton[][] buttons = new JButton[5][5];
+    private tictactoelib lib = new tictactoelib();
+    private JLabel turnLabel = new JLabel("Turn: Player X", SwingConstants.CENTER);
+    private char currentPlayer = 'X';
 
     public tictactoe() {
-        frame = new JFrame("Tic Tac Toe");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(600, 700);
-        frame.setLayout(new BorderLayout());
+        lib.initializeBoard(); // Initialize board
 
-        boardPanel = new JPanel();
-        boardPanel.setLayout(new GridLayout(SIZE, SIZE));
-        buttons = new JButton[SIZE][SIZE];
+        // Layout setup
+        setLayout(new BorderLayout());
+        JPanel boardPanel = new JPanel(new GridLayout(5, 5));
+        boardPanel.setBackground(Color.DARK_GRAY);
+        initializeGUI(boardPanel); // Initialize buttons
 
-        initializeBoard();
+        JPanel controlPanel = new JPanel(new BorderLayout());
+        controlPanel.setBackground(Color.BLACK);
+        controlPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        statusLabel = new JLabel("Player X's turn");
-        statusLabel.setFont(new Font("Arial", Font.PLAIN, 24));
-        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        frame.add(statusLabel, BorderLayout.NORTH);
-        frame.add(boardPanel, BorderLayout.CENTER);
+        // Label for current turn
+        turnLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        turnLabel.setForeground(Color.WHITE);
+        controlPanel.add(turnLabel, BorderLayout.CENTER);
 
-        JButton resetButton = new JButton("Reset Game");
-        resetButton.setFont(new Font("Arial", Font.PLAIN, 24));
+        // Reset button
+        JButton resetButton = new JButton("Reset");
+        resetButton.setFont(new Font("Arial", Font.BOLD, 18));
+        resetButton.setBackground(new Color(70, 70, 70));
+        resetButton.setForeground(Color.WHITE);
+        resetButton.setFocusPainted(false);
         resetButton.addActionListener(e -> resetGame());
-        frame.add(resetButton, BorderLayout.SOUTH);
+        controlPanel.add(resetButton, BorderLayout.EAST);
 
-        frame.setVisible(true);
+        add(boardPanel, BorderLayout.CENTER);
+        add(controlPanel, BorderLayout.SOUTH);
+
+        // Window settings
+        setTitle("Tic-Tac-Toe");
+        setSize(700, 750);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null); // Center window
+        setVisible(true);
     }
 
-    private void initializeBoard() {
-        updateBoard();
-    }
+    private void initializeGUI(JPanel boardPanel) {
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                buttons[i][j] = new JButton(" ");
+                buttons[i][j].setFont(new Font("Arial", Font.BOLD, 100));
+                buttons[i][j].setBackground(new Color(50, 50, 50));
+                buttons[i][j].setForeground(Color.LIGHT_GRAY);
+                buttons[i][j].setFocusPainted(false);
+                buttons[i][j].setBorder(new LineBorder(Color.BLACK, 2));
 
-    private void handleButtonClick(int row, int col) {
-        tictactoelib.makeMoveJNI(row, col);
-        updateBoard();
-        if (tictactoelib.checkWinJNI()) {
-            statusLabel.setText("Player " + (tictactoelib.getCurrentPlayerJNI().equals("X") ? "O" : "X") + " wins!");
-            disableBoard();
-        } else if (tictactoelib.isDrawJNI()) {
-            statusLabel.setText("It's a draw!");
-            disableBoard();
-        } else {
-            updateStatusLabel();
-        }
-    }
-
-
-    private void updateBoard() {
-        String[][] boardState = tictactoelib.getBoardStateJNI();
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                if (buttons[i][j] == null) {
-                    buttons[i][j] = new JButton();
-                    buttons[i][j].setFont(new Font("Arial", Font.PLAIN, 100));
-                    buttons[i][j].setFocusPainted(false);
-                    buttons[i][j].setBackground(Color.WHITE);
-                    final int row = i;
-                    final int col = j;
-                    buttons[row][col].addActionListener(e -> handleButtonClick(row, col));
-                    boardPanel.add(buttons[i][j]);
-                }
-                buttons[i][j].setText(boardState[i][j]);
-                buttons[i][j].setEnabled(boardState[i][j].isEmpty());
+                final int x = i, y = j;
+                buttons[i][j].addActionListener(e -> handleMove(x, y));
+                buttons[i][j].addMouseListener(new java.awt.event.MouseAdapter() {
+                    public void mouseEntered(java.awt.event.MouseEvent evt) {
+                        if (buttons[x][y].getText().equals(" "))
+                            buttons[x][y].setBackground(new Color(70, 70, 70)); // Hover effect
+                    }
+                    public void mouseExited(java.awt.event.MouseEvent evt) {
+                        buttons[x][y].setBackground(new Color(50, 50, 50));
+                    }
+                });
+                boardPanel.add(buttons[i][j]);
             }
         }
     }
 
-    private void updateStatusLabel() {
-        String currentPlayer = tictactoelib.getCurrentPlayerJNI();
-        statusLabel.setText(currentPlayer + "'s turn");
+    private void handleMove(int x, int y) {
+        if (lib.makeMove(x, y, currentPlayer)) {
+            buttons[x][y].setText(String.valueOf(currentPlayer));
+            buttons[x][y].setForeground(currentPlayer == 'X' ? Color.CYAN : Color.ORANGE);
+
+            // Update the board state using getBoard for verification
+            char[][] board = lib.getBoard();
+            for (int i = 0; i < 5; i++) {
+                for (int j = 0; j < 5; j++) {
+                    buttons[i][j].setText(board[i][j] == ' ' ? "" : String.valueOf(board[i][j]));
+                }
+            }
+
+            char winner = lib.checkWin();
+            if (winner == 'T') showEndGameMessage("It's a tie!");
+            else if (winner != ' ') showEndGameMessage(winner + " wins!");
+            else {
+                currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
+                turnLabel.setText("Turn: Player " + currentPlayer);
+            }
+        }
+    }
+
+    private void showEndGameMessage(String message) {
+        JLabel label = new JLabel(message, SwingConstants.CENTER);
+        label.setFont(new Font("Arial", Font.BOLD, 36));
+        label.setForeground(Color.WHITE);
+
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Color.BLACK);
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        panel.add(label, BorderLayout.CENTER);
+
+        JOptionPane.showMessageDialog(this, panel, "Game Over", JOptionPane.PLAIN_MESSAGE);
+        resetGame(); // Reset after message
     }
 
     private void resetGame() {
-        tictactoelib.resetGameJNI();
-        updateBoard();
-        statusLabel.setText("Player X's turn");
-    }
+        lib.resetBoard(); // Reset board
+        currentPlayer = 'X';
+        turnLabel.setText("Turn: Player X");
 
-    private void disableBoard() {
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                buttons[i][j].setEnabled(false);
+        // Retrieve the reset board and update GUI
+        char[][] board = lib.getBoard();
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 5; j++) {
+                buttons[i][j].setText(board[i][j] == ' ' ? "" : String.valueOf(board[i][j]));
+                buttons[i][j].setBackground(new Color(50, 50, 50));
+                buttons[i][j].setForeground(Color.LIGHT_GRAY);
             }
         }
     }
 
     public static void main(String[] args) {
-        javax.swing.SwingUtilities.invokeLater(tictactoe::new);
+        new tictactoe();
     }
 }

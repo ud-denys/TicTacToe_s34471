@@ -1,13 +1,11 @@
-public class tictactoelib {
-    static{
+class tictactoelib {
+    static {
         System.loadLibrary("libtictactoelib");
     }
 
-
-    public static native void makeMoveJNI(int row, int col);
-    public static native String[][] getBoardStateJNI();
-    public static native void resetGameJNI();
-    public static native String getCurrentPlayerJNI();
-    public static native boolean checkWinJNI();
-    public static native boolean isDrawJNI();
+    public native void initializeBoard();
+    public native boolean makeMove(int x, int y, char player);
+    public native char checkWin();
+    public native void resetBoard();
+    public native char[][] getBoard();
 }
